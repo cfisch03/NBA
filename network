@@ -1,0 +1,55 @@
+from sklearn import datasets
+
+import tensorflow as tf
+
+from tensorflow.keras import layers as KL
+
+import matplotlib.pyplot as plt
+
+
+X = nstat
+
+y = np.array(output)
+
+input_tensor = KL.Input(X.shape[1], name='input_layer')
+nlayers = 4
+
+last_input = input_tensor
+
+for lno in range(nlayers):
+    last_input = KL.Dense(len(labels), activation='elu')(last_input)
+    last_input = KL.Dropout(.9)(last_input)
+    # last_input = KL.Dropout(.8)(last_input)
+
+dense_output = KL.Dense(1, activation='relu')(last_input)
+
+model = tf.keras.Model(input_tensor, dense_output)
+
+loss = tf.keras.losses.categorical_crossentropy
+loss = tf.keras.losses.mse
+
+train_size = int(.9*X.shape[0])
+
+inds = np.random.permutation(range(X.shape[0]))
+
+train_x = X[inds[:train_size]]
+train_y = y[inds[:train_size]]
+
+test_x = X[inds[train_size:]]
+test_y = y[inds[train_size:]]
+ 
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3), loss=loss)
+hist = model.fit(train_x, train_y, epochs=1000, validation_data=(test_x, test_y), shuffle=True) #batch_size=2
+
+plt.plot(hist.history['loss'][-200:])
+plt.plot(hist.history['val_loss'][-200:])
+plt.show(block=False)
+
+pred = model.predict(test_x)
+acc = model.evaluate(test_x, test_y)
+
+print(f'pred = {pred[0]}, y = {train_y[0]}')
+
+mse = model.evaluate(train_x, train_y)
+
+print(f'test MSE is {mse}')
