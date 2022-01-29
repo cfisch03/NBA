@@ -1,0 +1,44 @@
+import requests
+import json
+import numpy as np   
+import pdb
+import time
+GAMES = 90
+output = []
+stat_list = []
+labels = ['points', 'min', 'offReb', 'defReb', 'fga', 'fgm', 'fta', 'ftm', 'tpa', 'tpm', 'assists', 'pFouls', 'steals', 'turnovers', 'blocks']
+player_id = ['260', '361', '242', '327', '776', '2566', '930', '222', '142', '114', '432', '525', '1846', '2584', '258', '177', '215', '124', '265', '279', '159', '963']
+
+url = "https://api-nba-v1.p.rapidapi.com/statistics/players/playerId/"
+
+headers = {
+    'x-rapidapi-host': "api-nba-v1.p.rapidapi.com",
+    'x-rapidapi-key': "4d97b02621msh66cc5562b4147efp1858d3jsnc1083ae93585"
+    }
+
+for k in range (len(player_id)):
+    if (k % 8 == 0):
+        time.sleep(85)
+    nurl = url + player_id[k]
+    response = requests.request("GET", nurl, headers=headers)
+    json_data = json.loads(response.text)
+    data = json_data['api']['statistics'][-GAMES:]
+    stats = np.zeros((15,))
+    for i in range (GAMES):
+        #if data[i]['points'] != '' and i != 0:
+            #output.append(float(data[i]['offReb']) + float(data[i]['defReb']))
+        t = data[i]['min']
+        result = 0
+        if ':' in t:
+            (m, s) = t.split(':')
+            result = int(m + s) / 4800
+        data[i]['min'] = result 
+        if i != (GAMES - 1) and data[i]['points'] != '': 
+            for j in range(len(labels)):
+                stats[j] = float(data[i][labels[j]])
+            stat_list.append(stats.copy())
+nstat = np.array(stat_list)
+output = nstat[1:,2:3] + nstat[1:,3:4]
+nstat = nstat[0:-1]
+for col in range(nstat.shape[1]):
+    nstat[:,col] = (nstat[:,col] - nstat[:,col].min()) / (nstat[:,col].max() - nstat[:,col].min())
